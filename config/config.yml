@@ -1,0 +1,25 @@
+# chatsheet/config.yml
+
+# 伺服器設定
+server:
+  port: 8080
+  jwt_secret: "chatsheet"
+
+# 資料庫設定
+database:
+  host: localhost
+  port: 5432
+  user: user
+  password: password
+  name: chatsheet_db
+  ssl_mode: disable
+
+# Unipile 服務設定
+unipile:
+  api_key: "YOUR_UNIPILE_ACCESS_TOKEN" # 新增：Unipile 服務訪問權杖
+  api_base_url: "https://api.unipile.com:1234" # 新增：Unipile API 基礎 URL
+
+# 前端/回調 URL
+app:
+  server_url: "http://localhost:8080"
+  frontend_url: "http://localhost:5173"
