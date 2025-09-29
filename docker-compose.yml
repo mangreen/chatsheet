@@ -12,5 +12,16 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  # myapp:
+  #   build: 
+  #     context: . 
+  #     dockerfile: Dockerfile
+  #   container_name: chatsheet_myapp
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - db
+  #   restart: on-failure
+
 volumes:
   pgdata:

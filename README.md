@@ -30,6 +30,47 @@ Please use github as version tracking and display progress and commits as you pr
 
 
 ## How to Start
+### env
+- golang v1.23.12+
+- node.js v22.18.0+
+- docker
+
+### Development Mode
+#### Database
 ```bash
+# Start DB
+docker-compose up
+```
+
+#### Frontend (svelte + vite)
+Under ./web/myapp
+```bash
+npm install
+
+# Run the frontend dev server on http://localhost:5173
+npm run dev
+# or build dist package for all-in-one fullstack
+npm run build
+```
+
+#### Backend (golang)
+Put your unipile ***api_key*** & ***api_base_url*** into ./config/config.yml first.
+```bash
+# The server will be run on http://localhost:8080
 go run ./cmd/myapp/main.go
 ```
+
+#### Test
+- If you use frontend dev server, please access http://localhost:5173
+- If you choose all-in-one fullstack, please access http://localhost:8080
+
+### Docker Mode
+Put your unipile ***api_key*** & ***api_base_url*** into ./config/config.yml first.
+```bash
+# build
+docker build -f Dockerfile-mono -t chatsheet:latest .
+
+# run
+docker run -it --rm --name chatsheet -p 8080:8080 -p 5432:5432 chatsheet:latest
+```
+And the access to http://localhost:8080

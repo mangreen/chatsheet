@@ -1,0 +1,75 @@
+# chatsheet/Dockerfile (Monolithic Image: Postgres + Go + Svelte)
+
+# ==================================
+# 階段 1: Golang 後端編譯 (Builder Stage)
+# ==================================
+FROM golang:1.23-alpine AS builder
+
+ENV GOPROXY=https://goproxy.cn,https://goproxy.io,direct
+RUN apk add --no-cache git gcc musl-dev
+
+WORKDIR /app
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 go build -ldflags "-s -w" -o /myapp ./cmd/myapp
+
+# ==================================
+# 階段 2: Svelte 前端打包 (Frontend Stage)
+# ==================================
+FROM node:20-alpine AS frontend
+
+WORKDIR /app/chatsheet/web/myapp
+
+COPY ./web/myapp/package.json .
+COPY ./web/myapp/package-lock.json .
+COPY ./web/myapp/vite.config.js .
+COPY ./web/myapp/svelte.config.js .
+RUN npm install
+
+COPY ./web/myapp/src ./src
+COPY ./web/myapp/index.html .
+RUN npm run build
+
+
+# ==================================
+# 階段 3: 最終映像檔 (Final Stage) - 基於 Postgres
+# ==================================
+FROM postgres:16-alpine
+
+# 安裝額外工具，例如 curl, bash (用於啟動腳本和健康檢查)
+RUN apk add --no-cache bash curl
+
+# 設定時區
+ENV TZ=Asia/Taipei
+RUN apk add --no-cache tzdata
+
+# 設定 Postgres 環境變數 (如果需要覆寫預設值)
+# 這些變數會被 Postgres 容器啟動時自動使用
+ENV POSTGRES_USER=user
+ENV POSTGRES_PASSWORD=password
+ENV POSTGRES_DB=chatsheet_db
+
+# 複製 Go 執行檔到 /app
+WORKDIR /chatsheet
+COPY --from=builder /myapp /chatsheet/myapp
+COPY ./config /chatsheet/config
+
+# 複製前端靜態檔案到 /app/web/myapp/dist
+COPY --from=frontend /app/chatsheet/web/myapp/dist /chatsheet/web/myapp/dist
+
+# 創建一個啟動腳本
+# 這個腳本將負責啟動 Postgres，然後等待其準備就緒，最後啟動 Go 應用程式
+COPY docker-db.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-db.sh
+
+# 暴露服務埠 (Postgres 5432 + Go App 8080)
+EXPOSE 5432
+EXPOSE 8080
+
+# 設定容器啟動命令為自定義的腳本
+ENTRYPOINT ["docker-db.sh"]
+# CMD 參數會傳給 ENTRYPOINT 腳本
+CMD ["myapp"]
